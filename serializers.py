@@ -1,97 +1,64 @@
-from rest_framework import serializers
-from .models import Category, Medicine, Country, City, Supplier, Order, OrderItem
+from rest_framework.serializers import ModelSerializer
+
+from apps.models import Category, Medicine, Supplier, City, Country
 
 
-class CategorySerializer(serializers.ModelSerializer):
+class CategoryModelSerializer(ModelSerializer):
     class Meta:
         model = Category
-        fields = ['id', 'name']
+        fields = ('id','name')
 
-
-class MedicineSerializer(serializers.ModelSerializer):
-    category_id = serializers.PrimaryKeyRelatedField(
-        queryset=Category.objects.all(), source='category'
-    )
-
+class MedicineModelSerializer(ModelSerializer):
     class Meta:
         model = Medicine
-        fields = ['id', 'name', 'category_id', 'description', 'price', 'stock', 'expiry_date']
+        fields = ('id','name','category','description','price','stock')
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        request = self.context.get('request')
 
-class CountrySerializer(serializers.ModelSerializer):
+        if request and request.method == 'GET': # noqa
+            representation.pop('description', None)
+
+        return representation
+
+class MedicineUpdateModelSerializer(ModelSerializer):
     class Meta:
-        model = Country
-        fields = ['id', 'name']
+        model = Medicine
+        fields = ('id','name','category','description','price','stock')
 
 
-class CitySerializer(serializers.ModelSerializer):
-    country_id = serializers.PrimaryKeyRelatedField(
-        queryset=Country.objects.all(), source='country'
-    )
-
-    class Meta:
-        model = City
-        fields = ['id', 'name', 'country_id']
-
-
-class SupplierSerializer(serializers.ModelSerializer):
-    city_id = serializers.PrimaryKeyRelatedField(
-        queryset=City.objects.all(), source='city'
-    )
-
+class SupplierModelSerializer(ModelSerializer):
     class Meta:
         model = Supplier
-        fields = ['id', 'name', 'phone', 'city_id']
+        fields = ('id','name','phone','city',)
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        request = self.context.get('request')
+
+        if request and request.method == 'GET': # noqa
+            representation['city'] = instance.city.name
 
 
-# Buyurtma ichidagi dorilar uchun yordamchi serializer
-class OrderItemSerializer(serializers.ModelSerializer):
-    medicine_id = serializers.PrimaryKeyRelatedField(
-        queryset=Medicine.objects.all(), source='medicine'
-    )
+        return representation
 
+
+class CountryModelSerializer(ModelSerializer):
     class Meta:
-        model = OrderItem
-        fields = ['medicine_id', 'quantity']
+        model = Country
+        fields = ('id','name')
 
-
-class OrderSerializer(serializers.ModelSerializer):
-    items = OrderItemSerializer(many=True, write_only=True)
-
+class CityModelSerializer(ModelSerializer):
     class Meta:
-        model = Order
-        fields = ['id', 'customer_name', 'total_price', 'status', 'created_at', 'items']
-        read_only_fields = ['total_price', 'created_at']
+        model = City
+        fields = ('id','name','country')
 
-    def create(self, validated_data):
-        items_data = validated_data.pop('items')
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        request = self.context.get('request')
 
-        # Dastlab buyurtmani umumiy narxsiz yaratamiz
-        order = Order.objects.create(**validated_data)
+        if request and request.method == 'GET': # noqa
+            representation['country'] = instance.country.name
 
-        total_price = 0
-        for item in items_data:
-            medicine = item['medicine']
-            quantity = item['quantity']
-
-            # Omborda yetarlicha dori borligini tekshirish
-            if medicine.stock < quantity:
-                raise serializers.ValidationError(
-                    f"{medicine.name} dan omborda yetarli emas. Qoldiq: {medicine.stock}"
-                )
-
-            # Ombordan dorini ayirib tashlash va saqlash
-            medicine.stock -= quantity
-            medicine.save()
-
-            # Umumiy narxni hisoblash
-            total_price += medicine.price * quantity
-
-            # OrderItem yaratish
-            OrderItem.objects.create(order=order, medicine=medicine, quantity=quantity)
-
-        # Hisoblangan umumiy narxni buyurtmaga yozib qoyish
-        order.total_price = total_price
-        order.save()
-
-        return order
+        return representation

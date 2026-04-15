@@ -1,41 +1,45 @@
-from rest_framework import viewsets
-from rest_framework.filters import SearchFilter
-from django_filters.rest_framework import DjangoFilterBackend
-from .models import Category, Medicine, Country, City, Supplier, Order
-from .serializers import (
-    CategorySerializer, MedicineSerializer, CountrySerializer,
-    CitySerializer, SupplierSerializer, OrderSerializer
-)
+from drf_spectacular.utils import extend_schema
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 
-class CategoryViewSet(viewsets.ModelViewSet):
+from apps.models import Category, Medicine, Supplier, Country, City
+from apps.serializers import (CategoryModelSerializer, MedicineModelSerializer,
+                             MedicineUpdateModelSerializer, SupplierModelSerializer, CountryModelSerializer,
+                             CityModelSerializer)
+
+
+@extend_schema(tags=['Category'])
+class CategoryListCreateApiView(ListCreateAPIView):
     queryset = Category.objects.all()
-    serializer_class = CategorySerializer
+    serializer_class = CategoryModelSerializer
 
-class MedicineViewSet(viewsets.ModelViewSet):
+@extend_schema(tags=['Medicine'])
+class MedicineListCreateApiView(ListCreateAPIView):
     queryset = Medicine.objects.all()
-    serializer_class = MedicineSerializer
-    filter_backends = [DjangoFilterBackend, SearchFilter]
-    # category_id bo'yicha filtrlash va name bo'yicha qidirish
-    filterset_fields = ['category']
+    serializer_class = MedicineModelSerializer
+
+@extend_schema(tags=['Medicine'])
+class MedicineRetrieveUpdateDestroyApiView(RetrieveUpdateDestroyAPIView):
+    queryset = Medicine.objects.all()
+    serializer_class = MedicineUpdateModelSerializer
+    lookup_field = 'id'
     search_fields = ['name']
 
-class CountryViewSet(viewsets.ModelViewSet):
-    queryset = Country.objects.all()
-    serializer_class = CountrySerializer
-
-class CityViewSet(viewsets.ModelViewSet):
-    queryset = City.objects.all()
-    serializer_class = CitySerializer
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['country']
-
-class SupplierViewSet(viewsets.ModelViewSet):
+@extend_schema(tags=['Supplier'])
+class SupplierListCreateAPIView(ListCreateAPIView):
     queryset = Supplier.objects.all()
-    serializer_class = SupplierSerializer
+    serializer_class = SupplierModelSerializer
 
-class OrderViewSet(viewsets.ModelViewSet):
-    queryset = Order.objects.all()
-    serializer_class = OrderSerializer
-    filter_backends = [DjangoFilterBackend]
-    # status va sana bo'yicha filtrlash
-    filterset_fields = ['status', 'created_at']
+@extend_schema(tags=['Country'])
+class CountryListAPIView(ListCreateAPIView):
+    queryset = Country.objects.all()
+    serializer_class = CountryModelSerializer
+
+@extend_schema(tags=['City'])
+class CityListCreateApiView(ListCreateAPIView):
+    queryset = City.objects.all()
+    serializer_class = CityModelSerializer
+
+
+
+
+

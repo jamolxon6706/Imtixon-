@@ -1,13 +1,15 @@
+from django.contrib import admin
 from django.urls import path
-from apps import views
+
+from apps.views import (CategoryListCreateApiView, MedicineListCreateApiView,
+                       MedicineRetrieveUpdateDestroyApiView, SupplierListCreateAPIView,
+                       CountryListAPIView, CityListCreateApiView)
 
 urlpatterns = [
-    path('country/', views.country_list, name='country-list'),
-    path('city/', views.city_list, name='city-list'),
-    path('category/', views.category_list, name='category-list'),
-    path('medicine/', views.medicine_list, name='medicine-list'),
-    path('medicine/<int:pk>/', views.medicine_detail, name='medicine-detail'),
-    path('supplier/', views.supplier_list, name='supplier-list'),
-    path('order/', views.order_list, name='order-list'),
-    path('order/<int:pk>/status/', views.order_status_update, name='order-status-update'),
+    path('category',CategoryListCreateApiView.as_view()),
+    path('medicine',MedicineListCreateApiView.as_view()),
+    path('medicine/<int:id>',MedicineRetrieveUpdateDestroyApiView.as_view()),
+    path('supplier',SupplierListCreateAPIView.as_view()),
+    path('country',CountryListAPIView.as_view()),
+    path('city',CityListCreateApiView.as_view()),
 ]

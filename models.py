@@ -1,58 +1,50 @@
 from django.db import models
+from django.db.models import Model, CharField, ForeignKey, CASCADE, DecimalField, TextField, TextChoices
 
-class Category(models.Model):
-    name = models.CharField(max_length=100)
 
-    def __str__(self):
-        return self.name
+class Category(Model):
+    name = CharField(max_length=100)
 
-class Medicine(models.Model):
-    name = models.CharField(max_length=200)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='medicines')
-    description = models.TextField(blank=True, null=True)
-    price = models.DecimalField(max_digits=12, decimal_places=2)
-    stock = models.PositiveIntegerField(default=0)
-    expiry_date = models.DateField()
+    class Meta:
+        db_table = 'category'
 
-    def __str__(self):
-        return self.name
+class Medicine(Model):
+    name = CharField(max_length=255)
+    category = ForeignKey(Category,on_delete=CASCADE)
+    description = TextField()
+    price = DecimalField(max_digits=10, decimal_places=0)
+    stock = DecimalField(max_digits=10, decimal_places=0)
 
-class Country(models.Model):
-    name = models.CharField(max_length=100)
+    class Meta:
+        db_table = 'medicine'
 
-    def __str__(self):
-        return self.name
+class Country(Model):
+    name = CharField(max_length=255)
 
-class City(models.Model):
-    name = models.CharField(max_length=100)
-    country = models.ForeignKey(Country, on_delete=models.CASCADE, related_name='cities')
+class City(Model):
+    name = CharField(max_length=255)
+    country = ForeignKey(Country,on_delete=CASCADE)
 
-    def __str__(self):
-        return self.name
+    class Meta:
+        db_table = 'city'
 
-class Supplier(models.Model):
-    name = models.CharField(max_length=200)
-    phone = models.CharField(max_length=20)
-    city = models.ForeignKey(City, on_delete=models.SET_NULL, null=True, related_name='suppliers')
+class Supplier(Model):
+    name = CharField(max_length=255)
+    phone = CharField(max_length=255)
+    city = ForeignKey(City,on_delete=CASCADE)
 
-    def __str__(self):
-        return self.name
+    class Meta:
+        db_table = 'supplier'
 
-class Order(models.Model):
-    STATUS_CHOICES = (
-        ('pending', 'Kutilmoqda'),
-        ('completed', 'Bajarildi'),
-        ('cancelled', 'Bekor qilindi'),
-    )
-    customer_name = models.CharField(max_length=200)
-    total_price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    created_at = models.DateField(auto_now_add=True)
 
-    def __str__(self):
-        return f"{self.customer_name} - {self.id}"
+class Order(Model):
+    class Status(TextChoices):
+        A = 'accepted', 'Accepted'
+        P = 'process',  'Process'
+        D = 'delivered', 'Delivered'
+    username = CharField(max_length=255)
+    status = CharField(choices=Status, default=Status.A, max_length=20)
 
-class OrderItem(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
-    medicine = models.ForeignKey(Medicine, on_delete=models.PROTECT)
-    quantity = models.PositiveIntegerField()
+class OrderItem(Model):
+    order = ForeignKey(Order,on_delete=CASCADE)
+    product = ForeignKey(Medicine,on_delete=CASCADE)
